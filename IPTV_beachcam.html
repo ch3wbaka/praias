@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player IPTV</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body {
+            text-align: center;
+            background-color: white;
+            color: #50608fff;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        video {
+            width: 100%;
+            max-width: 800px;
+            height: auto;
+            border: 1px solid #000000;
+            border-radius: 10px;
+        }
+        select, button {
+            margin: 5px;
+            padding: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <h3>CAMERAS BEACHCAM PRAIAS EM PORTUGAL</h3>
+
+    
+    <video id="video" controls></video>
+
+  <br>
+
+
+
+ <select id="channelList">
+        <option>Carregando canais...</option>
+    </select>
+    <button onclick="playSelectedChannel()">Assistir</button>
+
+    <script>
+        const playlistUrl = "https://raw.githubusercontent.com/ch3wbaka/praias/refs/heads/main/webcams_praias.m3u8";
+        const channelList = document.getElementById('channelList');
+        const video = document.getElementById('video');
+
+        // Função para carregar a lista M3U
+        async function loadChannels() {
+            try {
+                const response = await fetch(playlistUrl);
+                const data = await response.text();
+                const lines = data.split("\n");
+
+                channelList.innerHTML = ""; // Limpa o drop-down
+
+                let currentName = "";
+                lines.forEach((line) => {
+                    if (line.startsWith("#EXTINF")) {
+                        currentName = line.split(",")[1].trim(); // Nome do canal
+                    } else if (line.startsWith("http") || line.startsWith("rtmp")) {
+                        let url = line.trim();
+                        let option = document.createElement("option");
+                        option.value = url;
+                        option.textContent = currentName;
+                        channelList.appendChild(option);
+                    }
+                });
+            } catch (error) {
+                console.error("Erro ao carregar a lista M3U:", error);
+                channelList.innerHTML = "<option>Erro ao carregar canais</option>";
+            }
+        }
+
+        // Função para carregar e reproduzir o canal selecionado
+        function playSelectedChannel() {
+            let url = channelList.value;
+            if (!url) {
+                alert("Selecione um canal válido!");
+                return;
+            }
+
+            if (Hls.isSupported()) {
+                let hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                    video.play();
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = url;
+                video.addEventListener('loadedmetadata', function () {
+                    video.play();
+                });
+            } else {
+                alert("Seu navegador não suporta HLS!");
+            }
+        }
+
+        // Carregar canais ao iniciar a página
+        loadChannels();
+    </script>
+
+</body>
+</html>
